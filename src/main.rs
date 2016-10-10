@@ -4,7 +4,7 @@ mod phi;
 mod views;
 
 use sdl2::pixels::Color;
-use phi::Events;
+use phi::{Events, Phi, View, ViewAction};
 
 fn main() {
     // Initialize SDL2
@@ -16,22 +16,21 @@ fn main() {
         .position_centered().opengl()
         .build().unwrap();
 
-    let mut renderer = window.renderer()
-        .accelerated()
-        .build().unwrap();
+    let mut context = Phi{
+        events: Events::new(sdl_context.event_pump().unwrap()), 
+        renderer: window.renderer()
+                    .accelerated()
+                    .build().unwrap(),
+    };
 
-    let mut events = Events::new(sdl_context.event_pump().unwrap());
+    let mut current_view: Box<View> = Box::new(::views::DefaultView);
 
     loop {
-        events.pump();
-
-        if events.now.quit || events.now.key_escape == Some(true) {
-            break;
-        }
+        context.events.pump();
         
-        // Render a fully black window
-        renderer.set_draw_color(Color::RGB(0, 0, 0));
-        renderer.clear();
-        renderer.present();
+        match current_view.render(&mut context, 0.01) {
+            ViewAction::None => context.renderer.present(),
+            ViewAction::Quit => break,
+        }
     }
 }
