@@ -5,8 +5,8 @@ mod views;
 
 fn main() {
 
-    ::phi::spawn("Rusty Shooter", |_| {
-        Box::new(::views::DefaultView)
+    ::phi::spawn("Rusty Shooter", |phi| {
+        Box::new(::views::ShipView::new(phi))
     });
 }
  
