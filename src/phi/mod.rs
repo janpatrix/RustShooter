@@ -8,6 +8,8 @@ struct_events! {
         key_escape: Escape,
         key_up: Up,
         key_down: Down,
+        key_left: Left,
+        key_right: Right,
         key_space: Space
     },
     else: {
@@ -20,6 +22,13 @@ pub struct Phi<'window> {
     pub renderer: Renderer<'window>,
 }
 
+impl<'window>Phi<'window> {
+    pub fn output_size(&self) -> (f64, f64) {
+        let (w, h) = self.renderer.output_size().unwrap();
+        (w as f64, h as f64)
+    }
+}
+
 pub enum ViewAction {
     None,
     Quit,
@@ -27,7 +36,7 @@ pub enum ViewAction {
 }
 
 pub trait View {
-    fn render (&mut self, contex: &mut Phi, elapsed: f64) -> ViewAction;
+    fn render (&mut self, context: &mut Phi, elapsed: f64) -> ViewAction;
 }
 
 pub fn spawn<F>(title: &str, init: F)
@@ -39,7 +48,7 @@ where F: Fn(&mut Phi) -> Box<View> {
 
     // Create the window
     let window = video.window(title, 800, 600)
-        .position_centered().opengl()
+        .position_centered().opengl().resizable()
         .build().unwrap();
 
     let mut context = Phi{
@@ -71,12 +80,12 @@ where F: Fn(&mut Phi) -> Box<View> {
         fps += 1;
 
         if now - last_second > 1_000 {
-            println!("FPS: {}", fps);
+            // println!("FPS: {}", fps);
             last_second = now;
             fps = 0;
         }
 
-        context.events.pump();
+        context.events.pump(&mut context.renderer);
         
         match current_view.render(&mut context, elapsed) {
             ViewAction::None => context.renderer.present(),
@@ -85,3 +94,4 @@ where F: Fn(&mut Phi) -> Box<View> {
         }
     }
 }
+

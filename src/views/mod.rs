@@ -2,6 +2,12 @@ use phi::{Phi, View, ViewAction};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect as SdlRect;
 
+const PLAYER_SPEED: f64 = 180.0;
+
+struct Ship {
+    rect: Rectangle,
+}
+
 pub struct ShipView{
     player: Ship,
 }
@@ -26,7 +32,41 @@ impl View for ShipView {
         if phi.events.now.quit || phi.events.now.key_escape == Some(true) {
             return ViewAction::Quit;
         }
-        //Move the Ship
+
+        // Move the player's ship
+        let traveled = PLAYER_SPEED * elapsed;
+
+        let diagonal =
+            (phi.events.key_up ^ phi.events.key_down) &&
+            (phi.events.key_left ^ phi.events.key_right);
+
+        let moved =
+            if diagonal { 1.0 / 2.0f64.sqrt() }
+            else { 1.0 } * PLAYER_SPEED * elapsed;
+
+        let dx = match (phi.events.key_left, phi.events.key_right) {
+            (true, true) | (false, false) => 0.0,
+            (true, false) => -moved,
+            (false, true) => moved,
+        };
+
+        let dy = match (phi.events.key_up, phi.events.key_down) {
+            (true, true) | (false, false) => 0.0,
+            (true, false) => -moved,
+            (false, true) => moved,
+        };
+
+        self.player.rect.x += dx;
+        self.player.rect.y += dy;
+
+        let movable_region = Rectangle {
+            x: 0.0,
+            y: 0.0,
+            w: phi.output_size().0 * 0.70,
+            h: phi.output_size().1,
+        };
+
+        self.player.rect = self.player.rect.move_inside(movable_region).unwrap();
 
         //Clear the Scene
         phi.renderer.set_draw_color(Color::RGB(0,0,0));
@@ -36,8 +76,6 @@ impl View for ShipView {
         phi.renderer.set_draw_color(Color::RGB(200, 50, 50));
         phi.renderer.fill_rect(self.player.rect.to_sdl().unwrap());
 
-        self.player.rect.x += 1.0;
-        self.player.rect.y += 1.0;
 
         ViewAction::None
     }
@@ -57,10 +95,24 @@ impl Rectangle {
 
         SdlRect::new(self.x as i32, self.y as i32, self.w as u32, self.h as u32).unwrap()
     }
+
+    pub fn move_inside(self, parent: Rectangle) -> Option<Rectangle> {
+        if self.w > parent.w || self.h > parent.h {
+            return None;
+        }
+        Some(Rectangle {
+            w: self.w,
+            h: self.h,
+            x: if self.x < parent.x { parent.x }
+               else if self.x + self.w >= parent.x + parent.w { parent.x + parent.w - self.w }
+               else { self.x },
+            y: if self.y < parent.y { parent.y }
+               else if self.y + self.h >= parent.y + parent.h { parent.y + parent.h - self.h }
+               else { self.y },
+        })
+    }
 }
 
-struct Ship {
-    rect: Rectangle,
-}
+
 
 
