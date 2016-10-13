@@ -4,5 +4,6 @@ version = "0.1.0"
 authors = ["Patrick Gross <patrick.gross@native-instruments.de>"]
 
 [dependencies]
-sdl2 = "0.16"
+sdl2 = "0.16.0"
 sdl2_image = "0.16.0"
+sdl2_ttf = "0.16"
